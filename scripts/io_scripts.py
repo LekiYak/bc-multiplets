@@ -1,6 +1,6 @@
 def gmap2inv(txtfile, location, channel):
     """
-    Converts a list of inventory =stations from IRIS (i.e. gmap-stations.txt) into an Obspy inventory object.
+    Converts a list of inventory stations from IRIS (i.e. gmap-stations.txt) into an Obspy inventory.
 
     INPUTS:
     txtfile: str
@@ -63,3 +63,85 @@ def gmap2inv(txtfile, location, channel):
         
     return inv
     
+def obs_orientation(inv, correction_file, **kwargs):
+    """"
+    Updates the orientations of OBS stations in an Obspy inventory using a corrections file.
+
+    INPUTS:
+    inv: Obspy inventory object
+        Inventory object containing network and station metadata
+
+    correction_file: str
+        Path to text file containing corrections for stations in the format:
+        HEADER
+        STATION BH1_ORIENTATION 
+        where BH1_ORIENTATION is assumed to be 90 degrees counterclockwise from BH2
+
+    OPTIONAL INPUTS:
+    accepted_error: int or float
+        Azimuthal uncertainty 2-standard dev. threshhold (in degrees). 
+        Stations whose azimuth estimate carries a 2sd error greater than this input will not be updated.
+
+    OUTPUTS:
+    inv: Obspy inventory object
+        Inventory object with updated station orientations.
+    """
+
+    #------------------------------#
+    # READING THE CORRECTIONS FILE #
+    #------------------------------#
+
+    accepted_error = kwargs.get('accepted_error', 180)
+
+    # Open corrections file
+    file = open(correction_file, 'r')
+    lines = file.readlines()
+    file.close()
+
+    # Remove header
+    lines = lines[1:]
+
+    # Initialize station and orientation lists
+    corrected_stations = []
+    azimuths = []
+    errors   = []
+
+    # If there are no errors (error column empty)
+    # replace all errors with 0
+    if len(lines[0].split(' ')) < 3:
+        errors = [0] * len(lines)
+
+    # Iterate over lines to add stations, azimuths, and errors to lists
+    for line in lines:
+        line = line.split(' ')
+        
+        # Checks if the error of this station is above the threshold
+        # skips this iteration (station) if true
+        if float(line[1]) > accepted_error:
+            continue
+
+        corrected_stations.append(line[0]) # Appending station
+        azimuths.append(float(line[1])) # Appending azimuth
+        errors.append(float(line[2]))   # Appending error
+
+    #------------------------#
+    # UPDATING THE INVENTORY #
+    #------------------------#
+
+    for network in inv:
+        for station in network:
+            if station.code in corrected_stations: # Found station that needs correction
+
+                index = corrected_stations.index(station.code) # Index of station
+                primary_orientation = azimuths[index] # Fetching corresponding azimuthal correction
+                secondary_orientation = primary_orientation + 90 # **2 is 90 degrees clockwise of **1
+
+                for channel in station.channels:
+                    if channel.code.endswith('1'): # **1, or primary orientation
+                        channel.azimuth = primary_orientation
+                    elif channel.code.endswith('2'): # **2, or secondary orientation
+                        channel.azimuth = secondary_orientation
+
+                print(f'Updated orientation of {station.code} to {primary_orientation}')
+
+    return inv
