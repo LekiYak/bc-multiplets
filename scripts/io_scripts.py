@@ -117,31 +117,41 @@ def obs_orientation(inv, correction_file, **kwargs):
         
         # Checks if the error of this station is above the threshold
         # skips this iteration (station) if true
-        if float(line[1]) > accepted_error:
+        if int(line[2]) > accepted_error:
             continue
 
         corrected_stations.append(line[0]) # Appending station
-        azimuths.append(float(line[1])) # Appending azimuth
-        errors.append(float(line[2]))   # Appending error
+        azimuths.append(int(line[1])) # Appending azimuth
+        errors.append(int(line[2]))   # Appending error
 
     #------------------------#
     # UPDATING THE INVENTORY #
     #------------------------#
 
+    temp_list = []
+
     for network in inv:
         for station in network:
+            if station.code == 'J50C':
+                print(station.channels, station.code in corrected_stations)
             if station.code in corrected_stations: # Found station that needs correction
 
                 index = corrected_stations.index(station.code) # Index of station
                 primary_orientation = azimuths[index] # Fetching corresponding azimuthal correction
                 secondary_orientation = primary_orientation + 90 # **2 is 90 degrees clockwise of **1
+                if secondary_orientation > 360:
+                    secondary_orientation -= 360
 
                 for channel in station.channels:
                     if channel.code.endswith('1'): # **1, or primary orientation
                         channel.azimuth = primary_orientation
+                        channel.dip = 0
                     elif channel.code.endswith('2'): # **2, or secondary orientation
                         channel.azimuth = secondary_orientation
+                        channel.dip = 0
 
-                print(f'Updated orientation of {station.code} to {primary_orientation}')
+                # print(network.code, station.code, primary_orientation)
+
+                # print(f'Updated orientation of {station.code} to {primary_orientation}')
 
     return inv
