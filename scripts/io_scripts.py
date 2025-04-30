@@ -155,3 +155,39 @@ def obs_orientation(inv, correction_file, **kwargs):
                 # print(f'Updated orientation of {station.code} to {primary_orientation}')
 
     return inv
+
+def read_nedb(nedb_filepath):
+    """
+    Reads a catalog in the NEDB format (| delimiters) and outputs a pandas dataframe of the catalog.
+    The dataframe has appropriate data types (i.e. datetime instead of string) and column names (lowercase).
+    
+    INPUTS:
+    nedb_filepath: str
+        Path to the NEDB file.
+
+    OUTPUTS:
+    df: pandas dataframe
+        Dataframe containing the catalog information.
+    
+    """
+
+    import pandas as pd
+
+    # read the NEDB file
+    data = pd.read_csv(nedb_filepath, delimiter='|')
+
+    # change column names to lower case and fix types
+    data['time'] = pd.to_datetime(data['Time'])
+    data['time'] = data['time'].dt.tz_localize(None)
+    data['latitude'] = data['Latitude'].astype(float)
+    data['longitude'] = data['Longitude'].astype(float)
+    data['depth'] = data['Depth/km'].astype(float)
+    data['magnitude'] = data['Magnitude'].astype(float)
+    data['magtype'] = data['MagType']
+    data['eventlocationname'] = data['EventLocationName']
+    data['eventid'] = data['#EventID'].astype(str)
+
+    # drop the original columns
+    data = data.drop(columns=['Time', 'Latitude', 'Longitude', 'Depth/km', 'Magnitude', 'MagType', 'EventLocationName', '#EventID'])
+
+    return data

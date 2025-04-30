@@ -116,7 +116,7 @@ def g2x(catalogevent):
 # **uncomment for GUI file requester** catfile = filedialog.askopenfilename()
 
 # please in case data file is not edit 
-catfile='C:/Users/lekim/OneDrive/Desktop/School/uvic/bc-multiplets/hypocentres/robert_script_nrcan.txt'
+catfile='/local/lyakuden/offshore_bc/bc-multiplets/hypocentres/robert_script_nrcan.txt'
 
 print('loading catalogue data ...')
 raw=np.loadtxt(catfile)
@@ -204,7 +204,7 @@ while(len(mp)>1):
             pool.append([mp[n],data[mp[n]]])
         else:
             break
-
+        
     ######################## pool pairs generation and test over 3 criteria ########################
     if len(pool)>1:
         couples = subsets(pool, 2)
