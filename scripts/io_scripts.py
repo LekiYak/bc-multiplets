@@ -1,3 +1,6 @@
+import numpy as np
+import matplotlib.colors as mcolors
+
 def gmap2inv(txtfile, location, channel):
     """
     Converts a list of inventory stations from IRIS (i.e. gmap-stations.txt) into an Obspy inventory.
@@ -111,7 +114,7 @@ def obs_orientation(inv, correction_file, **kwargs):
     if len(lines[0].split(' ')) < 3:
         errors = [0] * len(lines)
 
-    # Iterate over lines to add stations, azimuths, and errors to lists
+    # Iterate offover lines to add stations, azimuths, and errors to lists
     for line in lines:
         line = line.split(' ')
         
@@ -191,3 +194,52 @@ def read_nedb(nedb_filepath):
     data = data.drop(columns=['Time', 'Latitude', 'Longitude', 'Depth/km', 'Magnitude', 'MagType', 'EventLocationName', '#EventID'])
 
     return data
+
+def cpt2rgb(cpt_file, value):
+    z_vals = []
+    rgb_vals = []
+    with open(cpt_file) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith(("#", "B", "F", "N")):
+                continue
+            parts = line.split()
+            if len(parts) < 4:
+                continue
+            try:
+                z1 = float(parts[0])
+                c1 = parts[1]
+                z2 = float(parts[2])
+                c2 = parts[3]
+
+                def parse_color(c):
+                    if "/" in c:
+                        return np.array(list(map(float, c.split("/"))))
+                    else:
+                        return np.array(mcolors.to_rgb(c)) * 255  # convert to 0–255 scale
+
+                rgb1 = parse_color(c1)
+                rgb2 = parse_color(c2)
+
+                z_vals.extend([z1, z2])
+                rgb_vals.extend([rgb1, rgb2])
+            except Exception as e:
+                print(f"Skipping line: {line} -- Error: {e}")
+
+    if not z_vals:
+        raise ValueError("No valid color entries found in CPT.")
+    zipped = sorted(set(zip(z_vals, [tuple(rgb) for rgb in rgb_vals])))
+    z_vals = np.array([z for z, _ in zipped])
+    rgb_vals = np.array([rgb for _, rgb in zipped])
+
+    if value <= z_vals[0]:
+        return rgb_vals[0]
+    elif value >= z_vals[-1]:
+        return rgb_vals[-1]
+    idx = np.searchsorted(z_vals, value) - 1
+    z1, z2 = z_vals[idx], z_vals[idx + 1]
+    rgb1, rgb2 = rgb_vals[idx], rgb_vals[idx + 1]
+    t = (value - z1) / (z2 - z1)
+    return np.round((1 - t) * rgb1 + t * rgb2).astype(int)
+
+    return np.round((1 - t) * rgb1 + t * rgb2).astype(int)
