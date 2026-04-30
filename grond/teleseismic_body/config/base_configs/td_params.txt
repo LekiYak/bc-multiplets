@@ -1,0 +1,119 @@
+# p (Z) time domain
+- !grond.WaveformTargetGroup
+
+  # Normalisation family (see the Grond documentation for how it works).
+  # Use distinct normalisation families when mixing misfit contributors with
+  # different magnitude scaling, like e.g. cross-correlation based misfit and 
+  # time-domain Lx norm.
+  normalisation_family: 'td'
+
+  # Just a name used to identfy targets from this group. Use dot-separated path
+  # notation to group related contributors
+  path: 'td.pphase'
+
+  # Epicentral distance range of stations to be considered
+  distance_min: 3333e3
+  distance_max: 10000e3
+
+  # Names of components to be included. Available: N=north, E=east, Z=vertical
+  # (up), R=radial (away), T=transverse (right)
+  channels: ['Z']
+
+  # How to weight contributions from this group in the global misfit
+  weight: 0.4
+
+  # subsection on how to fit the traces
+  misfit_config: !grond.WaveformMisfitConfig
+
+    # Frequency band [Hz] of acausal filter (flat part of frequency taper)
+    fmin: 0.02
+    fmax: 0.05
+
+    # Factor defining fall-off of frequency taper (zero at fmin/ffactor and
+    # fmax*ffactor)
+    ffactor: 1.5
+
+    # Time window to include in the data fitting. Times can be defined offset
+    # to given phase arrivals. E.g. '{stored:P}-600' would mean 600 s
+    # before arrival of the phase named 'P'. The phase must be defined in the
+    # travel time tables in the GF store.
+    # Nyquist is 200s for 1/100s = 0.01 Hz
+    tmin: '{stored:P}-30'
+    tmax: '{stored:P}+30'
+    tfade: 20
+
+    # How to fit the data (available: 'time_domain', 'frequency_domain',
+    # 'log_frequency_domain', 'absolute', 'envelope', 'cc_max_norm')
+    domain: 'time_domain'
+    
+    # For L1 norm: 1, L2 norm: 2, etc.
+    norm_exponent: 1
+
+  # How to interpolate the Green's functions (available choices:
+  # 'nearest_neighbor', 'multilinear'). Choices other than 'nearest_neighbor'
+  # may require dense GF stores to avoid aliasing artifacts in the forward 
+  # modelling.
+  interpolation: 'nearest_neighbor'
+
+  # Name of the GF Store to use
+  store_id: 'global_2s_v2_prem'
+
+# s (T) time domain
+- !grond.WaveformTargetGroup
+
+  # Normalisation family (see the Grond documentation for how it works).
+  # Use distinct normalisation families when mixing misfit contributors with
+  # different magnitude scaling, like e.g. cross-correlation based misfit and 
+  # time-domain Lx norm.
+  normalisation_family: 'td'
+
+  # Just a name used to identfy targets from this group. Use dot-separated path
+  # notation to group related contributors
+  path: 'td.sphase'
+
+  # Epicentral distance range of stations to be considered
+  distance_min: 3333e3
+  distance_max: 7777e3
+
+  # Names of components to be included. Available: N=north, E=east, Z=vertical
+  # (up), R=radial (away), T=transverse (right)
+  # Choosing T for SH phase
+  channels: ['T']
+
+  # How to weight contributions from this group in the global misfit
+  weight: 0.4
+
+  # subsection on how to fit the traces
+  misfit_config: !grond.WaveformMisfitConfig
+
+    # Frequency band [Hz] of acausal filter (flat part of frequency taper)
+    fmin: 0.02
+    fmax: 0.05
+
+    # Factor defining fall-off of frequency taper (zero at fmin/ffactor and
+    # fmax*ffactor)
+    ffactor: 1.5
+
+    # Time window to include in the data fitting. Times can be defined offset
+    # to given phase arrivals. E.g. '{stored:P}-600' would mean 600 s
+    # before arrival of the phase named 'P'. The phase must be defined in the
+    # travel time tables in the GF store.
+    tmin: '{stored:S}-45'
+    tmax: '{stored:S}+45'
+    tfade: 30
+
+    # How to fit the data (available: 'time_domain', 'frequency_domain',
+    # 'log_frequency_domain', 'absolute', 'envelope', 'cc_max_norm')
+    domain: 'time_domain'
+    
+    # For L1 norm: 1, L2 norm: 2, etc.
+    norm_exponent: 1
+
+  # How to interpolate the Green's functions (available choices:
+  # 'nearest_neighbor', 'multilinear'). Choices other than 'nearest_neighbor'
+  # may require dense GF stores to avoid aliasing artifacts in the forward 
+  # modelling.
+  interpolation: 'nearest_neighbor'
+
+  # Name of the GF Store to use
+  store_id: 'global_2s_v2_prem'
